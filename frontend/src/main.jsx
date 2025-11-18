@@ -3,10 +3,13 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
-import StudentDashboard from "./pages/Dashboard.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
 import ApplyOD from "./pages/ApplyOD.jsx";
 import FacultyApproval from "./pages/FacultyApproval.jsx";
 import ODStatus from "./pages/ODStatus.jsx";
+import AdminDash from "./pages/AdminDash"; 
+   // 👈 Add this
+
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -15,10 +18,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/student" element={<StudentDashboard />} />
+      <Route path="/student" element={<Dashboard />} />
       <Route path="/apply-od" element={<ApplyOD />} />
       <Route path="/faculty" element={<FacultyApproval />} />
-      <Route path="/status" element={<ODStatus />} />
+
+
+      <Route path="/studentDash" element={<ODStatus />} />
+       <Route path="/adminDash" element={<AdminDash />} />
+      
 
     </Routes>
   </BrowserRouter>

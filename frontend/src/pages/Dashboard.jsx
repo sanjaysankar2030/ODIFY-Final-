@@ -12,7 +12,7 @@ export default function Dashboard() {
         {/* 🔹 View OD Status Button at TOP */}
         <button
           style={styles.topButton}
-          onClick={() => navigate("/odstatus")}
+          onClick={() => navigate("/studentDash")}
         >
           View OD Status
         </button>

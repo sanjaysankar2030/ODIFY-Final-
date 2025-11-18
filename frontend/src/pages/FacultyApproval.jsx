@@ -9,7 +9,6 @@ export default function FacultyApproval() {
 
   useEffect(() => {
     fetchPending();
-    // eslint-disable-next-line
   }, []);
 
   const fetchPending = async () => {
@@ -18,10 +17,14 @@ export default function FacultyApproval() {
       const res = await axios.get("http://localhost:5000/api/requests/pending", {
         headers: { "x-auth-token": token },
       });
+
+      // res.data is array, no extra fields
+      console.log("Pending requests", res.data);
       setRequests(res.data);
+      
     } catch (err) {
       console.error("Fetch pending error:", err);
-      alert("Failed to load pending requests. Make sure you're logged in as Faculty/HoD/Admin.");
+      alert("Error fetching pending requests");
     } finally {
       setLoading(false);
     }
@@ -29,23 +32,30 @@ export default function FacultyApproval() {
 
   const makeDecision = async (id, action) => {
     const remarks = prompt("Enter remarks (optional):");
+
     try {
-      await axios.post(
+      const res = await axios.post(
         `http://localhost:5000/api/requests/${id}/decision`,
         { action, remarks },
         { headers: { "x-auth-token": token } }
       );
+
       alert(`Request ${action}`);
-      // remove the request from local state
+
       setRequests((prev) => prev.filter((r) => r._id !== id));
+      
     } catch (err) {
       console.error("Decision error:", err);
-      alert("Failed to update request. Check console for details.");
+      alert("Failed to update request.");
     }
   };
 
   if (loading) {
-    return <div style={styles.container}><p>Loading pending requests...</p></div>;
+    return (
+      <div style={styles.container}>
+        <p>Loading pending requests...</p>
+      </div>
+    );
   }
 
   return (
@@ -58,25 +68,24 @@ export default function FacultyApproval() {
         ) : (
           requests.map((r) => (
             <div key={r._id} style={styles.reqCard}>
+
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <div>
                   <h3 style={{ margin: 0 }}>{r.eventName}</h3>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>Student:</strong> {r.studentName || r.student?.name}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>Reg No:</strong> {r.regNo || r.student?.regNo}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>Dept:</strong> {r.dept} &nbsp; <strong>Year:</strong> {r.year}
-                  </p>
-                  <p style={{ margin: "4px 0" }}>
-                    <strong>Type:</strong> {r.eventType} &nbsp; <strong>Dates:</strong>{" "}
+
+                  <p><strong>Student:</strong> {r.student?.name || r.studentName}</p>
+                  <p><strong>Reg No:</strong> {r.student?.regNo || r.regNo}</p>
+                  <p><strong>Dept:</strong> {r.student?.dept || r.dept}</p>
+                  <p><strong>Year:</strong> {r.student?.year || r.year}</p>
+
+                  <p>
+                    <strong>Event Type:</strong> {r.eventType} <br />
+                    <strong>Dates:</strong> 
                     {new Date(r.startDate).toLocaleDateString()} - {new Date(r.endDate).toLocaleDateString()}
                   </p>
                 </div>
 
-                <div style={{ textAlign: "right" }}>
+                <div>
                   {r.proofFile ? (
                     <a
                       href={`http://localhost:5000/${r.proofFile}`}
@@ -87,7 +96,7 @@ export default function FacultyApproval() {
                       View Proof
                     </a>
                   ) : (
-                    <span style={{ color: "#777" }}>No proof</span>
+                    <span style={{ color: "#777" }}>No proof uploaded</span>
                   )}
                 </div>
               </div>
@@ -100,9 +109,11 @@ export default function FacultyApproval() {
                   Reject
                 </button>
               </div>
+
             </div>
           ))
         )}
+
       </div>
     </div>
   );
@@ -123,9 +134,7 @@ const styles = {
     padding: "20px",
     boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
   },
-  title: {
-    marginBottom: "16px",
-  },
+  title: { marginBottom: "16px" },
   reqCard: {
     border: "1px solid #eee",
     padding: "14px",
@@ -141,21 +150,20 @@ const styles = {
   approve: {
     background: "#28a745",
     color: "#fff",
-    border: "none",
     padding: "8px 14px",
     borderRadius: "5px",
     cursor: "pointer",
+    border: "none",
   },
   reject: {
     background: "#dc3545",
     color: "#fff",
-    border: "none",
     padding: "8px 14px",
     borderRadius: "5px",
     cursor: "pointer",
+    border: "none",
   },
   link: {
-    display: "inline-block",
     padding: "6px 10px",
     background: "#007bff",
     color: "#fff",

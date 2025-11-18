@@ -6,34 +6,76 @@ export default function Register() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
     regNo: "",
     dept: "",
     year: "",
     role: "Student",
   });
 
+  const [error, setError] = useState("");
+
+  // ---------- HANDLE CHANGE LOGIC ----------
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // ROLE CHANGE LOGIC
+    if (name === "role") {
+      if (value === "Admin") {
+        // Admin must NOT select dept or year
+        setForm({ ...form, role: value, dept: "", year: "" });
+      } 
+      else if (value !== "Student") {
+        // Faculty / HoD → clear year but keep dept
+        setForm({ ...form, role: value, year: "" });
+      } 
+      else {
+        // Student → normal
+        setForm({ ...form, role: value });
+      }
+      return;
+    }
+
+    setForm({ ...form, [name]: value });
   };
 
+  // ---------- REGISTER FUNCTION ----------
   const handleRegister = async (e) => {
     e.preventDefault();
 
+    // Gmail check
+    if (!form.email.toLowerCase().endsWith("@gmail.com")) {
+      setError("Email must be a @gmail.com address");
+      return;
+    }
+
+    // Password match check
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    setError("");
+
     try {
       await axios.post("http://localhost:5000/api/auth/register", form);
-      alert("User Registered Successfully!");
-      window.location.href = "/login"; // go back to login page
+      alert("Registered Successfully!");
+      window.location.href = "/login";
     } catch (err) {
-      alert("Registration failed!");
+      alert("Registration Failed!");
     }
   };
 
   return (
-    <div style={styles.container}>
+    <div style={styles.page}>
       <div style={styles.card}>
-        <h2 style={styles.title}>Register</h2>
+        <h2 style={styles.title}>Create Account</h2>
+
+        {error && <p style={styles.error}>{error}</p>}
 
         <form onSubmit={handleRegister}>
+
+          {/* NAME */}
           <input
             type="text"
             name="name"
@@ -44,26 +86,7 @@ export default function Register() {
             required
           />
 
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            style={styles.input}
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
-
-          <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            style={styles.input}
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
-
+          {/* REGISTER NUMBER */}
           <input
             type="text"
             name="regNo"
@@ -73,24 +96,49 @@ export default function Register() {
             onChange={handleChange}
           />
 
-          <input
-            type="text"
+          {/* DEPARTMENT */}
+          <select
             name="dept"
-            placeholder="Department"
-            style={styles.input}
+            style={{
+              ...styles.input,
+              background: form.role === "Admin" ? "#dfe8f7" : "white",
+              cursor: form.role === "Admin" ? "not-allowed" : "pointer",
+            }}
             value={form.dept}
             onChange={handleChange}
-          />
+            disabled={form.role === "Admin"}
+            required={form.role !== "Admin"}   // Admin does NOT need dept
+          >
+            <option value="">Select Department</option>
+            <option value="AI&DS">AIDS</option>
+            <option value="AI&ML">AML</option>
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="EEE">EEE</option>
+            <option value="MECH">MECH</option>
+          </select>
 
-          <input
-            type="text"
+          {/* YEAR - DISABLED IF NOT STUDENT */}
+          <select
             name="year"
-            placeholder="Year"
-            style={styles.input}
+            style={{
+              ...styles.input,
+              background: form.role !== "Student" ? "#dfe8f7" : "white",
+              cursor: form.role !== "Student" ? "not-allowed" : "pointer",
+            }}
             value={form.year}
             onChange={handleChange}
-          />
+            disabled={form.role !== "Student"}
+            required={form.role === "Student"}
+          >
+            <option value="">Select Year</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
 
+          {/* ROLE DROPDOWN */}
           <select
             name="role"
             style={styles.input}
@@ -103,55 +151,123 @@ export default function Register() {
             <option value="Admin">Admin</option>
           </select>
 
+          {/* GMAIL */}
+          <input
+            type="email"
+            name="email"
+            placeholder="Gmail Address (must end with @gmail.com)"
+            style={styles.input}
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+
+          {/* PASSWORD */}
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            style={styles.input}
+            value={form.password}
+            onChange={handleChange}
+            required
+          />
+
+          {/* CONFIRM PASSWORD */}
+          <input
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm Password"
+            style={styles.input}
+            value={form.confirmPassword}
+            onChange={handleChange}
+            required
+          />
+
+          {/* SUBMIT BUTTON */}
           <button type="submit" style={styles.button}>
             Register
           </button>
         </form>
 
-        <p style={{ marginTop: "10px", textAlign: "center" }}>
-          Already have an account? <a href="/login">Login</a>
+        <p style={styles.footer}>
+          Already have an account?{" "}
+          <a href="/login" style={styles.link}>
+            Login
+          </a>
         </p>
       </div>
     </div>
   );
 }
 
+// -------------- STYLES ----------------
+
 const styles = {
-  container: {
+  page: {
     height: "100vh",
+    background: "#e8f1ff",
     display: "flex",
-    justifyContent: "center",
     alignItems: "center",
-    background: "#f0f2f5",
+    justifyContent: "center",
   },
+
   card: {
-    width: "350px",
-    padding: "25px",
+    width: "380px",
+    padding: "35px",
+    background: "#ffffff",
     borderRadius: "10px",
-    background: "#fff",
-    boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+    boxShadow: "0 8px 25px rgba(0, 72, 135, 0.25)",
+    border: "2px solid #d0e2ff",
   },
+
   title: {
     textAlign: "center",
-    marginBottom: "25px",
-    fontSize: "24px",
+    color: "#004a99",
+    fontSize: "26px",
+    fontWeight: "700",
+    marginBottom: "20px",
   },
+
   input: {
     width: "100%",
     padding: "12px",
     marginBottom: "15px",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-    fontSize: "16px",
+    border: "1.5px solid #9bbbe9",
+    borderRadius: "6px",
+    fontSize: "15px",
   },
+
   button: {
     width: "100%",
     padding: "12px",
-    background: "#28a745",
+    marginTop: "10px",
+    background: "#0059d4",
     color: "#fff",
     border: "none",
-    borderRadius: "5px",
+    borderRadius: "6px",
     cursor: "pointer",
-    fontSize: "16px",
+    fontSize: "17px",
+    fontWeight: "600",
+    transition: "0.3s",
+  },
+
+  footer: {
+    marginTop: "15px",
+    textAlign: "center",
+    fontSize: "14px",
+  },
+
+  link: {
+    color: "#0059d4",
+    fontWeight: "600",
+    textDecoration: "none",
+  },
+
+  error: {
+    color: "#d40000",
+    textAlign: "center",
+    marginBottom: "10px",
+    fontWeight: "600",
   },
 };

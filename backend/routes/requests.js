@@ -12,7 +12,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// Student submits OD request
+// ⭐ STUDENT submits OD request
 router.post("/submit", auth, upload.single("proofFile"), async (req, res) => {
   try {
     const od = new OD({
@@ -30,39 +30,96 @@ router.post("/submit", auth, upload.single("proofFile"), async (req, res) => {
   }
 });
 
-// Faculty sees pending ODs
-router.get("/pending", auth, roleCheck(["Faculty", "HoD", "Admin"]), async (req, res) => {
-  const list = await OD.find({ status: "Pending" });
-  res.json(list);
+// ⭐ FACULTY DASHBOARD DATA — only faculty/hod/admin
+router.get(
+  "/faculty/dashboard",
+  auth,
+  roleCheck(["faculty", "hod", "admin"]),
+  async (req, res) => {
+    try {
+      const requests = await OD.find({ facultyInCharge: req.user.id }).populate(
+        "student",
+        "name regNo dept year"
+      );
+
+      res.json({
+        count: requests.length,
+        requests,
+      });
+    } catch (err) {
+      console.log(err);
+      res.status(500).send("Server error");
+    }
+  }
+);
+
+// ⭐ FACULTY sees pending ODs
+router.get(
+  "/pending",
+  auth,
+  roleCheck(["faculty", "hod", "admin"]),
+  async (req, res) => {
+    const list = await OD.find({ status: "Pending" });
+    res.json(list);
+  }
+);
+
+// ⭐ STUDENT VIEWS OWN ODs
+router.get("/student/:id", auth, async (req, res) => {
+  try {
+    // student can only view their own OR faculty/hod/admin can view
+    if (
+      req.user.id !== req.params.id &&
+      !["faculty", "hod", "admin"].includes(req.user.role)
+    ) {
+      return res.status(403).send("Forbidden");
+    }
+
+    const list = await OD.find({ student: req.params.id });
+    res.json(list);
+  } catch (err) {
+    console.log(err);
+    res.status(500).send("Server error");
+  }
 });
 
-// Faculty decision
-router.post("/:id/decision", auth, roleCheck(["Faculty", "HoD", "Admin"]), async (req, res) => {
-  const { action, remarks } = req.body;
+// ⭐ FACULTY APPROVE/REJECT
+router.post(
+  "/:id/decision",
+  auth,
+  roleCheck(["faculty", "hod", "admin"]),
+  async (req, res) => {
+    const { action, remarks } = req.body;
 
-  const od = await OD.findById(req.params.id);
-  if (!od) return res.status(404).send("Not found");
+    const od = await OD.findById(req.params.id);
+    if (!od) return res.status(404).send("Not found");
 
-  od.status = action;
-  od.facultyRemarks = remarks;
-  od.facultyInCharge = req.user.id;
+    od.status = action;
+    od.facultyRemarks = remarks;
+    od.facultyInCharge = req.user.id;
 
-  await od.save();
+    await od.save();
 
-  res.json({ msg: "Updated", od });
-});
+    res.json({ msg: "Updated", od });
+  }
+);
 
-// Upload post-event certificate
-router.post("/:id/postproof", auth, upload.single("postEventProof"), async (req, res) => {
-  const od = await OD.findById(req.params.id);
-  if (!od) return res.status(404).send("Not found");
+// ⭐ STUDENT upload post-event certificate
+router.post(
+  "/:id/postproof",
+  auth,
+  upload.single("postEventProof"),
+  async (req, res) => {
+    const od = await OD.findById(req.params.id);
+    if (!od) return res.status(404).send("Not found");
 
-  od.postEventProof = req.file.path;
-  od.status = "ProofPending";
+    od.postEventProof = req.file.path;
+    od.status = "ProofPending";
 
-  await od.save();
+    await od.save();
 
-  res.json({ msg: "Certificate Uploaded", od });
-});
+    res.json({ msg: "Certificate Uploaded", od });
+  }
+);
 
 module.exports = router;
